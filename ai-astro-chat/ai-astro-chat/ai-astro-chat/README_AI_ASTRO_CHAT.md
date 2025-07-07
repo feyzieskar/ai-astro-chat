@@ -74,9 +74,6 @@ Then visit: [http://localhost:5173](http://localhost:5173)
 └── README.md       # You're reading it!
 ```
 
-## 📷 Screenshots
-
-_Add a screenshot of your app UI here_
 
 ## 🛡️ Security Note
 
@@ -88,4 +85,4 @@ Pull requests are welcome! Feel free to open an issue or suggest improvements.
 
 ## 📜 License
 
-MIT License © 2025 [Your Name]
+MIT License © 2025 Feyzi Eşkar
