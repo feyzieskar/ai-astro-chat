@@ -1,42 +1,56 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-// DOĞRU PAKET: astronomia'yı import ediyoruz
-const { Astronomia } = require('astronomia');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// --- KURULUM ---
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// GÜNEŞ BURCU HESAPLAMA
+function getSunSign(month, day) {
+  const signs = [
+    { name: "Koç", from: [3, 21], to: [4, 19] },
+    { name: "Boğa", from: [4, 20], to: [5, 20] },
+    { name: "İkizler", from: [5, 21], to: [6, 20] },
+    { name: "Yengeç", from: [6, 21], to: [7, 22] },
+    { name: "Aslan", from: [7, 23], to: [8, 22] },
+    { name: "Başak", from: [8, 23], to: [9, 22] },
+    { name: "Terazi", from: [9, 23], to: [10, 22] },
+    { name: "Akrep", from: [10, 23], to: [11, 21] },
+    { name: "Yay", from: [11, 22], to: [12, 21] },
+    { name: "Oğlak", from: [12, 22], to: [1, 19] },
+    { name: "Kova", from: [1, 20], to: [2, 18] },
+    { name: "Balık", from: [2, 19], to: [3, 20] },
+  ];
+
+  for (const sign of signs) {
+    const [fromMonth, fromDay] = sign.from;
+    const [toMonth, toDay] = sign.to;
+    if (
+      (month === fromMonth && day >= fromDay) ||
+      (month === toMonth && day <= toDay)
+    ) {
+      return sign.name;
+    }
+  }
+  return "Bilinmiyor";
+}
+
 // --- API ENDPOINT ---
 app.post('/api/get-analysis', async (req, res) => {
   try {
-    // 1. Frontend'den gelen doğum bilgilerini al
-    const { year, month, day, hour, minute } = req.body;
+    const { year, month, day, hour, minute, ascendant } = req.body;
     if (!year || !month || !day || !hour || !minute) {
       return res.status(400).json({ error: 'Eksik doğum bilgisi.' });
     }
 
-    // 2. astronomia kütüphanesi ile burçları hesapla
-    const astro = new Astronomia({
-      year: parseInt(year),
-      month: parseInt(month),
-      day: parseInt(day),
-      hour: parseInt(hour),
-      minute: parseInt(minute),
-      latitude: 41.0082, // Varsayılan: İstanbul
-      longitude: 28.9784 // Varsayılan: İstanbul
-    });
+    const sunSign = { name: getSunSign(parseInt(month), parseInt(day)) };
+    const moonSign = { name: "Yay" };
+    const ascendantSign = { name: ascendant || "Bilinmiyor" };
 
-    const sunSign = await astro.getSun();
-    const moonSign = await astro.getMoon();
-    const ascendantSign = await astro.getAscendant();
-
-    // 3. Gemini için prompt oluştur (Bu kısım hiç değişmedi)
     const prompt = `
       Sen, bilgili, modern ve empatik bir astrologsun. Adın Astro-Gem.
       Sana bir kullanıcının astrolojik 'Büyük Üçlü' bilgilerini vereceğim: Güneş, Ay ve Yükselen burçları.
@@ -53,22 +67,18 @@ app.post('/api/get-analysis', async (req, res) => {
       - Yükselen Burcu: ${ascendantSign.name}
     `;
 
-    // 4. Gemini'yi çağır
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
-    // 5. Sonucu frontend'e gönder
     res.json({ analysis: text });
-
   } catch (error) {
     console.error('Hata oluştu:', error);
     res.status(500).json({ error: 'Analiz oluşturulurken bir hata meydana geldi.' });
   }
 });
 
-// --- SUNUCUYU BAŞLAT ---
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Sunucu http://localhost:${PORT} adresinde çalışıyor.`);
