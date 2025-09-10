@@ -25,7 +25,7 @@
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-astro-chat.git
+git clone https://github.com/feyzieskar/ai-astro-chat.git
 cd ai-astro-chat
 ```
 
